@@ -1,5 +1,6 @@
 package com.example.foxflow;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
@@ -9,6 +10,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.InputType;
 import android.util.AttributeSet;
@@ -21,6 +23,9 @@ import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 public class MainActivity extends AppCompatActivity {
 
     int counter;
@@ -28,9 +33,11 @@ public class MainActivity extends AppCompatActivity {
     MyCanvas myCanvas;
     Integer lastButtonId;
     char alphabet;
+    Graph flowGraph;
 
 
     private String m_Text = "";
+    ArrayList<View> views;
 
 
 
@@ -43,10 +50,33 @@ public class MainActivity extends AppCompatActivity {
         start =  new float[2];
         start[0] = -9999;
         super.onCreate(savedInstanceState);
+        views = new ArrayList<>();
+        flowGraph = new Graph(new HashMap<>(),null,null);
 
         setContentView(R.layout.activity_main);
         MyCanvas rl = (MyCanvas) findViewById(R.id.rl);
         myCanvas = findViewById(R.id.rl);
+        RelativeLayout.LayoutParams bp1 = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+        Button doIt = new Button(this);
+        bp1.width = 150;
+        bp1.height = 150;
+        doIt.setLayoutParams(bp1);
+        doIt.setText(new StringBuilder().append("Do IT").toString());
+        doIt.setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.N)
+            @Override
+            public void onClick(View v) {
+                flowGraph.getPoints().forEach((key, value) ->{
+                    value.getInputEdges().forEach((name,edge) ->{
+                        System.out.println(edge.getName() + " : " + edge.getCapacity());
+                    });
+                    value.getOutputEdges().forEach((name,edge) ->{
+                        System.out.println(edge.getName() + " : " + edge.getCapacity());
+                    });
+                });
+            }
+        });
+        rl.addView(doIt);
         rl.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -80,6 +110,7 @@ public class MainActivity extends AppCompatActivity {
         btn.setId(localCount);
         btn.setTag(R.id.id,alphabet);
         btn.setTag(R.id.type,"blank");
+        Point point = new Point(""+alphabet,new HashMap<String,Edge>(),new HashMap<String,Edge>());
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -123,6 +154,13 @@ public class MainActivity extends AppCompatActivity {
                                         View last =  findViewById(lastButtonId);
                                         last.setTag(R.id.type,"blank");
                                         last.setBackgroundResource(R.mipmap.node_blank);
+                                        tv.setTag(R.id.id, last.getTag(R.id.id) + "" + finalView.getTag(R.id.id));
+                                        tv.setTag(R.integer.capacity,Integer.parseInt(input.getText().toString()));
+                                        views.add(tv);
+
+                                        Edge edge = new Edge(0,Integer.parseInt(input.getText().toString()),last.getTag(R.id.id) + "" + finalView.getTag(R.id.id));
+                                        point.getInputEdges().put(edge.getName(),edge);
+                                        flowGraph.getPoints().put(point.getName(), point);
                                     }
                                 });
                                 builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {

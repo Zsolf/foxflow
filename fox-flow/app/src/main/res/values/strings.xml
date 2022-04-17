@@ -2,4 +2,5 @@
     <string name="app_name">FoxFlow</string>
     <item type="id" name="type"></item>
     <item type="id" name="id"></item>
+    <item type="integer" name="capacity"></item>
 </resources>

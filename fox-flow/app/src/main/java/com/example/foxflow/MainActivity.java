@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
     Integer lastButtonId;
     char alphabet;
     Graph flowGraph;
+    String state;
 
 
     private String m_Text = "";
@@ -41,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    @SuppressLint("ClickableViewAccessibility")
+    @SuppressLint({"ClickableViewAccessibility", "ResourceType"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -52,28 +53,30 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         views = new ArrayList<>();
         flowGraph = new Graph(new HashMap<>(),null,null);
+        state = "edit";
+
+        FordFulkerson ff = new FordFulkerson();
 
         setContentView(R.layout.activity_main);
         MyCanvas rl = (MyCanvas) findViewById(R.id.rl);
         myCanvas = findViewById(R.id.rl);
-        RelativeLayout.LayoutParams bp1 = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+        RelativeLayout.LayoutParams bp1 = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
         Button doIt = new Button(this);
-        bp1.width = 150;
-        bp1.height = 150;
         doIt.setLayoutParams(bp1);
-        doIt.setText(new StringBuilder().append("Do IT").toString());
+        doIt.setId(99);
+        doIt.setText(new StringBuilder().append("Click here if you're done with editing").toString());
         doIt.setOnClickListener(new View.OnClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
             public void onClick(View v) {
-                flowGraph.getPoints().forEach((key, value) ->{
-                    value.getInputEdges().forEach((name,edge) ->{
-                        System.out.println(edge.getName() + " : " + edge.getCapacity());
-                    });
-                    value.getOutputEdges().forEach((name,edge) ->{
-                        System.out.println(edge.getName() + " : " + edge.getCapacity());
-                    });
-                });
+                if(state.equals("edit")){
+                    state = "source";
+                    counter = 100;
+                    Button btn = (Button) findViewById(99);
+                    btn.setText(new StringBuilder().append("Please select the source node").toString());
+                }else {
+                    ff.runAlgorithm(flowGraph);
+                }
             }
         });
         rl.addView(doIt);
@@ -111,87 +114,108 @@ public class MainActivity extends AppCompatActivity {
         btn.setTag(R.id.id,alphabet);
         btn.setTag(R.id.type,"blank");
         Point point = new Point(""+alphabet,new HashMap<String,Edge>(),new HashMap<String,Edge>());
+        flowGraph.getPoints().put(point.getName(), point);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int count = rl.getChildCount();
-                View view = null;
-                for(int i=0; i<count; i++) {
-                    view = rl.getChildAt(i);
-                    if(view instanceof Button && view.getId() == localCount){
-                        if(view.getTag(R.id.type) != "green") {
-                            view.setBackgroundResource(R.mipmap.node_green);
-                            view.setTag(R.id.type,"green");
-                            if (start[0] == -9999){
-                                start[0] = view.getX() + 75;
-                                start[1] = view.getY() + 75;
-                                lastButtonId = view.getId();
-                            }else{
-                                int[] param = determineBorder(start[0],start[1], view.getX() + 75,view.getY() + 75);
-                                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                                builder.setTitle("Please set the capacity");
-                                final EditText input = new EditText(MainActivity.this);
-                                input.setInputType(InputType.TYPE_CLASS_NUMBER);
-                                builder.setView(input);
-                                View finalView = view;
-                                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        m_Text = input.getText().toString();
-                                        RelativeLayout.LayoutParams lparams = new RelativeLayout.LayoutParams(
-                                                RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-                                        TextView tv = new TextView(MainActivity.this);
-                                        tv.setLayoutParams(lparams);
-                                        tv.setText(input.getText().toString());
-                                        tv.setX(((start[0] + finalView.getX() + param[0])/2)+((start[0] + finalView.getX() + param[0])/20));
-                                        tv.setY( ((start[1] + finalView.getY() + param[1])/2)+((start[1] + finalView.getY() + param[1])/100));
-                                        MyCanvas rl = (MyCanvas) findViewById(R.id.rl);
-                                        rl.addView(tv);
-                                        rl.drawArrow(start[0],start[1], finalView.getX() + param[0],finalView.getY() + param[1]);
-                                        finalView.setBackgroundResource(R.mipmap.node_blank);
-                                        finalView.setTag(R.id.type,"blank");
-                                        start[0] = -9999;
-                                        View last =  findViewById(lastButtonId);
-                                        last.setTag(R.id.type,"blank");
-                                        last.setBackgroundResource(R.mipmap.node_blank);
-                                        tv.setTag(R.id.id, last.getTag(R.id.id) + "" + finalView.getTag(R.id.id));
-                                        tv.setTag(R.integer.capacity,Integer.parseInt(input.getText().toString()));
-                                        views.add(tv);
+                    int count = rl.getChildCount();
+                    View view = null;
+                    for (int i = 0; i < count; i++) {
+                        view = rl.getChildAt(i);
+                        if (view instanceof Button && view.getId() == localCount) {
+                            if (state.equals("edit")) {
+                                if (view.getTag(R.id.type) != "green") {
+                                    view.setBackgroundResource(R.mipmap.node_green);
+                                    view.setTag(R.id.type, "green");
+                                    if (start[0] == -9999) {
+                                        start[0] = view.getX() + 75;
+                                        start[1] = view.getY() + 75;
+                                        lastButtonId = view.getId();
+                                    } else {
+                                        int[] param = determineBorder(start[0], start[1], view.getX() + 75, view.getY() + 75);
+                                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                                        builder.setTitle("Please set the capacity");
+                                        final EditText input = new EditText(MainActivity.this);
+                                        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+                                        builder.setView(input);
+                                        View finalView = view;
+                                        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int which) {
+                                                m_Text = input.getText().toString();
+                                                RelativeLayout.LayoutParams lparams = new RelativeLayout.LayoutParams(
+                                                        RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+                                                TextView tv = new TextView(MainActivity.this);
+                                                tv.setLayoutParams(lparams);
+                                                tv.setText(input.getText().toString());
+                                                tv.setX(((start[0] + finalView.getX() + param[0]) / 2) + ((start[0] + finalView.getX() + param[0]) / 20));
+                                                tv.setY(((start[1] + finalView.getY() + param[1]) / 2) + ((start[1] + finalView.getY() + param[1]) / 100));
+                                                MyCanvas rl = (MyCanvas) findViewById(R.id.rl);
+                                                rl.addView(tv);
+                                                rl.drawArrow(start[0], start[1], finalView.getX() + param[0], finalView.getY() + param[1]);
+                                                finalView.setBackgroundResource(R.mipmap.node_blank);
+                                                finalView.setTag(R.id.type, "blank");
+                                                start[0] = -9999;
+                                                View last = findViewById(lastButtonId);
+                                                last.setTag(R.id.type, "blank");
+                                                last.setBackgroundResource(R.mipmap.node_blank);
+                                                tv.setTag(R.id.id, last.getTag(R.id.id) + "" + finalView.getTag(R.id.id));
+                                                tv.setTag(R.integer.capacity, Integer.parseInt(input.getText().toString()));
+                                                views.add(tv);
 
-                                        Edge edge = new Edge(0,Integer.parseInt(input.getText().toString()),last.getTag(R.id.id) + "" + finalView.getTag(R.id.id));
-                                        point.getInputEdges().put(edge.getName(),edge);
-                                        flowGraph.getPoints().put(point.getName(), point);
-                                    }
-                                });
-                                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        dialog.cancel();
-                                        finalView.setBackgroundResource(R.mipmap.node_blank);
-                                        finalView.setTag(R.id.type,"blank");
-                                        start[0] = -9999;
-                                        View last =  findViewById(lastButtonId);
-                                        last.setTag(R.id.type,"blank");
-                                        last.setBackgroundResource(R.mipmap.node_blank);
-                                    }
-                                });
-                                builder.show();
+                                                Edge edgeIn = new Edge(0, Integer.parseInt(input.getText().toString()), last.getTag(R.id.id)+"");
+                                                Edge edgeOut = new Edge(0, Integer.parseInt(input.getText().toString()), point.getName());
+                                                flowGraph.getPoints().get(point.getName()).getInputEdges().put(edgeIn.getName(), edgeIn);
+                                                flowGraph.getPoints().get(last.getTag(R.id.id)+"").getOutputEdges().put(edgeOut.getName(), edgeOut);
+                                            }
+                                        });
+                                        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int which) {
+                                                dialog.cancel();
+                                                finalView.setBackgroundResource(R.mipmap.node_blank);
+                                                finalView.setTag(R.id.type, "blank");
+                                                start[0] = -9999;
+                                                View last = findViewById(lastButtonId);
+                                                last.setTag(R.id.type, "blank");
+                                                last.setBackgroundResource(R.mipmap.node_blank);
+                                            }
+                                        });
+                                        builder.show();
 
+                                    }
+                                } else {
+                                    view.setBackgroundResource(R.mipmap.node_blank);
+                                    view.setTag(R.id.type, "blank");
+                                    start[0] = -9999;
+                                }
+                                break;
+
+                            } else if (state.equals("sink")) {
+                                view.setBackgroundResource(R.mipmap.node_red);
+                                view.setTag(R.id.type, "red");
+                                flowGraph.setSink(flowGraph.getPoints().get(view.getTag(R.id.id) + ""));
+                                state = "done";
+                                @SuppressLint("ResourceType") Button btn = (Button) findViewById(99);
+                                btn.setText(new StringBuilder().append("Click here to run the algorithm").toString());
+                            } else if (state.equals("source")) {
+                                view.setBackgroundResource(R.mipmap.node_blue);
+                                view.setTag(R.id.type, "blue");
+                                flowGraph.setSource(flowGraph.getPoints().get(view.getTag(R.id.id) + ""));
+                                state = "sink";
+                                @SuppressLint("ResourceType") Button btn = (Button) findViewById(99);
+                                btn.setText(new StringBuilder().append("Please select the sink node").toString());
                             }
-                        }else{
-                            view.setBackgroundResource(R.mipmap.node_blank);
-                            view.setTag(R.id.type,"blank");
-                            start[0] = -9999;
                         }
-                        break;
+
                     }
-                }
 
             }
         });
         counter++;
         alphabet++;
         rl.addView(btn);
+
     }
 
     public int[] determineBorder(float from_x,float from_y,float to_x,float to_y){

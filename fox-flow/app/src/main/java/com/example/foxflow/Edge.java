@@ -2,11 +2,11 @@ package com.example.foxflow;
 
 public class Edge {
 
-    private Integer used;
-    private Integer capacity;
+    private int used;
+    private int capacity;
     private String name;
 
-    public Edge(Integer used, Integer capacity, String name) {
+    public Edge(Integer used, int capacity, String name) {
         this.used = used;
         this.capacity = capacity;
         this.name = name;
@@ -20,19 +20,19 @@ public class Edge {
         this.name = name;
     }
 
-    public Integer getUsed() {
+    public int getUsed() {
         return used;
     }
 
-    public void setUsed(Integer used) {
+    public void setUsed(int used) {
         this.used = used;
     }
 
-    public Integer getCapacity() {
+    public int getCapacity() {
         return capacity;
     }
 
-    public void setCapacity(Integer capacity) {
+    public void setCapacity(int capacity) {
         this.capacity = capacity;
     }
 

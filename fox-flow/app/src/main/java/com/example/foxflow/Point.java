@@ -14,6 +14,9 @@ public class Point {
         this.inputEdges = inputEdges;
     }
 
+    public Point() {
+    }
+
     public String getName() {
         return name;
     }

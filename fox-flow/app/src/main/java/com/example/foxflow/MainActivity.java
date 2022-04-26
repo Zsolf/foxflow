@@ -6,22 +6,19 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.InputType;
-import android.util.AttributeSet;
-import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,16 +62,21 @@ public class MainActivity extends AppCompatActivity {
         doIt.setLayoutParams(bp1);
         doIt.setId(99);
         doIt.setText(new StringBuilder().append("Click here if you're done with editing").toString());
+        doIt.setBackgroundColor(Color.parseColor("#90EE90"));
         doIt.setOnClickListener(new View.OnClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
             public void onClick(View v) {
-                if(state.equals("edit")){
+                if(state.equals("edit") && flowGraph.getPoints().size() > 1){
                     state = "source";
                     counter = 100;
                     Button btn = (Button) findViewById(99);
                     btn.setText(new StringBuilder().append("Please select the source node").toString());
-                }else {
+                    btn.setBackgroundColor(Color.parseColor("#00BFFF"));
+                }else if(flowGraph.getSource() != null && flowGraph.getSink() != null && ff.graph == null){
+                    Button btn = (Button) findViewById(99);
+                    btn.setText(new StringBuilder().append("Use the forward button to move the algorithm").toString());
+                    btn.setBackgroundColor(Color.parseColor("#00FFFF"));
                     ff.runAlgorithm(flowGraph);
                 }
             }
@@ -94,9 +96,44 @@ public class MainActivity extends AppCompatActivity {
                 if(counter<7) {
                     addButton(bp);
                 }
-
-
                 return false;
+            }
+        });
+
+        FloatingActionButton forward = findViewById(R.id.forward);
+        forward.setOnClickListener(new View.OnClickListener() {
+
+            @RequiresApi(api = Build.VERSION_CODES.N)
+            @Override
+            public void onClick(View v) {
+                if(state == "done" && !ff.isFinsihed()) {
+                    LinearLayout ll = findViewById(R.id.scrollLin);
+                    TextView tv = new TextView(MainActivity.this);
+                    tv.setText(new StringBuilder().append(ff.getCurrentStep()).toString());
+                    LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                    lp.setMargins(10, 10, 0, 10);
+                    tv.setLayoutParams(lp);
+                    ll.addView(tv);
+
+                    for(int i = 0; i < ff.pathNodes.size()-1; i++) {
+                        int count = rl.getChildCount();
+                        View view = null;
+                        for (int j = 0; j < count; j++) {
+                            view = rl.getChildAt(j);
+                            if (view instanceof TextView && view.getTag(R.id.id) != null) {
+                                if(view.getTag(R.id.id).equals(ff.pathNodes.get(i).getName()+""+ff.pathNodes.get(i+1).getName())) {
+                                    ((TextView) view).setText(new StringBuilder().append(ff.pathNodes.get(i).getOutputEdges().get(ff.pathNodes.get(i + 1).getName()).getCapacity()).append("/").append(ff.pathNodes.get(i).getOutputEdges().get(ff.pathNodes.get(i + 1).getName()).getUsed()).toString());
+                                }
+                            }
+                        }
+                    }
+
+                    ff.stepByStep();
+                }else if (ff.isFinsihed()){
+                    Button btn = (Button) findViewById(99);
+                    btn.setText(new StringBuilder().append("The algorithm is finished").toString());
+                    btn.setBackgroundColor(Color.parseColor("#FF7F7F"));
+                }
             }
         });
     }
@@ -147,24 +184,24 @@ public class MainActivity extends AppCompatActivity {
                                                         RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
                                                 TextView tv = new TextView(MainActivity.this);
                                                 tv.setLayoutParams(lparams);
-                                                tv.setText(input.getText().toString());
+                                                tv.setText(new StringBuilder().append(input.getText().toString()).append("/0").toString());
                                                 tv.setX(((start[0] + finalView.getX() + param[0]) / 2) + ((start[0] + finalView.getX() + param[0]) / 20));
                                                 tv.setY(((start[1] + finalView.getY() + param[1]) / 2) + ((start[1] + finalView.getY() + param[1]) / 100));
+                                                View last = findViewById(lastButtonId);
+                                                last.setTag(R.id.type, "blank");
+                                                last.setBackgroundResource(R.mipmap.node_blank);
+                                                tv.setTag(R.id.id, last.getTag(R.id.id) + "" + finalView.getTag(R.id.id));
+                                                tv.setTag(R.integer.capacity, Integer.parseInt(input.getText().toString().length() > 0 ? input.getText().toString() : "0"));
                                                 MyCanvas rl = (MyCanvas) findViewById(R.id.rl);
                                                 rl.addView(tv);
                                                 rl.drawArrow(start[0], start[1], finalView.getX() + param[0], finalView.getY() + param[1]);
                                                 finalView.setBackgroundResource(R.mipmap.node_blank);
                                                 finalView.setTag(R.id.type, "blank");
                                                 start[0] = -9999;
-                                                View last = findViewById(lastButtonId);
-                                                last.setTag(R.id.type, "blank");
-                                                last.setBackgroundResource(R.mipmap.node_blank);
-                                                tv.setTag(R.id.id, last.getTag(R.id.id) + "" + finalView.getTag(R.id.id));
-                                                tv.setTag(R.integer.capacity, Integer.parseInt(input.getText().toString()));
                                                 views.add(tv);
 
-                                                Edge edgeIn = new Edge(0, Integer.parseInt(input.getText().toString()), last.getTag(R.id.id)+"");
-                                                Edge edgeOut = new Edge(0, Integer.parseInt(input.getText().toString()), point.getName());
+                                                Edge edgeIn = new Edge(0, Integer.parseInt(input.getText().toString().length() > 0 ? input.getText().toString() : "0"), last.getTag(R.id.id)+"",false);
+                                                Edge edgeOut = new Edge(0, Integer.parseInt(input.getText().toString().length() > 0 ? input.getText().toString() : "0"), point.getName(),false);
                                                 flowGraph.getPoints().get(point.getName()).getInputEdges().put(edgeIn.getName(), edgeIn);
                                                 flowGraph.getPoints().get(last.getTag(R.id.id)+"").getOutputEdges().put(edgeOut.getName(), edgeOut);
                                             }
@@ -198,6 +235,7 @@ public class MainActivity extends AppCompatActivity {
                                 state = "done";
                                 @SuppressLint("ResourceType") Button btn = (Button) findViewById(99);
                                 btn.setText(new StringBuilder().append("Click here to run the algorithm").toString());
+                                btn.setBackgroundColor(Color.parseColor("#90EE90"));
                             } else if (state.equals("source")) {
                                 view.setBackgroundResource(R.mipmap.node_blue);
                                 view.setTag(R.id.type, "blue");
@@ -205,6 +243,7 @@ public class MainActivity extends AppCompatActivity {
                                 state = "sink";
                                 @SuppressLint("ResourceType") Button btn = (Button) findViewById(99);
                                 btn.setText(new StringBuilder().append("Please select the sink node").toString());
+                                btn.setBackgroundColor(Color.parseColor("#9D5783"));
                             }
                         }
 
@@ -232,9 +271,6 @@ public class MainActivity extends AppCompatActivity {
         }else{
             quarter = "4";
         }
-
-        System.out.println(quarter);
-        System.out.println(Math.abs(from_y) - Math.abs(to_y));
 
         switch (quarter){
             case "1": if (Math.abs(Math.abs(from_y) - Math.abs(to_y)) <=200){
@@ -271,6 +307,8 @@ public class MainActivity extends AppCompatActivity {
 
         return null;
     }
+
+
 
 
 }

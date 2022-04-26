@@ -62,7 +62,7 @@ public class MyCanvas extends RelativeLayout {
         this.paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(4);
-        paint.setColor(Color.BLACK);
+        paint.setColor(Color.GRAY);
 
         float angle,anglerad, radius, lineangle;
 

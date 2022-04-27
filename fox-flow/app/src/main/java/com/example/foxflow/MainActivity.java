@@ -121,6 +121,14 @@ public class MainActivity extends AppCompatActivity {
                         for (int j = 0; j < count; j++) {
                             view = rl.getChildAt(j);
                             if (view instanceof TextView && view.getTag(R.id.id) != null) {
+                                    if (ff.pathNodes.get(i).getOutputEdges().get(ff.pathNodes.get(i+1).getName()).isResidual()) {
+                                        if (view.getTag(R.id.id).equals(ff.pathNodes.get(i + 1).getName() + "" + ff.pathNodes.get(i).getName())) {
+                                            System.out.println(ff.pathNodes.get(i + 1).getName() + "" + ff.pathNodes.get(i).getName());
+                                            System.out.println(new StringBuilder().append(ff.pathNodes.get(i + 1).getOutputEdges().get(ff.pathNodes.get(i).getName()).getCapacity()).append("/").append(ff.pathNodes.get(i + 1).getOutputEdges().get(ff.pathNodes.get(i).getName()).getUsed()).toString());
+                                            ((TextView) view).setText(new StringBuilder().append(ff.pathNodes.get(i + 1).getOutputEdges().get(ff.pathNodes.get(i).getName()).getCapacity()).append("/").append(ff.pathNodes.get(i + 1).getOutputEdges().get(ff.pathNodes.get(i).getName()).getUsed()).toString());
+                                        }
+                                    }
+
                                 if(view.getTag(R.id.id).equals(ff.pathNodes.get(i).getName()+""+ff.pathNodes.get(i+1).getName())) {
                                     ((TextView) view).setText(new StringBuilder().append(ff.pathNodes.get(i).getOutputEdges().get(ff.pathNodes.get(i + 1).getName()).getCapacity()).append("/").append(ff.pathNodes.get(i).getOutputEdges().get(ff.pathNodes.get(i + 1).getName()).getUsed()).toString());
                                 }

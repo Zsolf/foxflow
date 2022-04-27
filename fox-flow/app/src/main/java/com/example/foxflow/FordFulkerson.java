@@ -66,6 +66,9 @@ public class FordFulkerson {
     private void useCapacity(Path path){
         for (int i = 0; i + 1 < path.getNodes().size(); i++){
             graph.getPoints().get(path.getNodes().get(i)).getInputEdges().get(path.getNodes().get(i+1)).use(path.getMinimum());
+            if(graph.getPoints().get(path.getNodes().get(i)).getInputEdges().get(path.getNodes().get(i+1)).isResidual()){
+                graph.getPoints().get(path.getNodes().get(i)).getOutputEdges().get(path.getNodes().get(i + 1)).use(path.getMinimum() - 2 * path.getMinimum());
+            }
             if(graph.getPoints().get(path.getNodes().get(i)).getOutputEdges().get(path.getNodes().get(i+1)) != null){
                     if(graph.getPoints().get(path.getNodes().get(i)).getOutputEdges().get(path.getNodes().get(i+1)).isResidual()) {
                         graph.getPoints().get(path.getNodes().get(i)).getOutputEdges().get(path.getNodes().get(i + 1)).use(path.getMinimum() - 2 * path.getMinimum());
@@ -77,6 +80,9 @@ public class FordFulkerson {
             }
 
             graph.getPoints().get(path.getNodes().get(i+1)).getOutputEdges().get(path.getNodes().get(i)).use(path.getMinimum());
+            if(graph.getPoints().get(path.getNodes().get(i+1)).getOutputEdges().get(path.getNodes().get(i)).isResidual()){
+                graph.getPoints().get(path.getNodes().get(i + 1)).getInputEdges().get(path.getNodes().get(i)).use(path.getMinimum() - 2 * path.getMinimum());
+            }
             if(graph.getPoints().get(path.getNodes().get(i+1)).getInputEdges().get(path.getNodes().get(i)) != null){
                     if(graph.getPoints().get(path.getNodes().get(i+1)).getInputEdges().get(path.getNodes().get(i)).isResidual()) {
                         graph.getPoints().get(path.getNodes().get(i + 1)).getInputEdges().get(path.getNodes().get(i)).use(path.getMinimum() - 2 * path.getMinimum());
